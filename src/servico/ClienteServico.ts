@@ -5,7 +5,7 @@ import {
   AtualizarClienteDTO, 
   ClienteRespostaDTO,
   ClienteComFiadosDTO 
-} from '../dto/ClienteDTO'
+} from '../dto/ClienteDto'
 
 export class ClienteServico {
   
