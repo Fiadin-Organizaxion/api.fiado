@@ -11,7 +11,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { testarConexao } from './util/database';
-import { authController, usuarioController } from './Controle';
+import { authController, usuarioController } from './controle';
 import { autenticar, autenticarOpcional, apenasDono } from './controle/middleware';
 
 // Cria a aplicação Express
