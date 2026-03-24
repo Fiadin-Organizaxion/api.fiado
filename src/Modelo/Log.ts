@@ -31,7 +31,13 @@ export type LogCriacao = {
 export class Log {
   private constructor(readonly props: LogProps) {}
 
-  public static build(usuarioId: number, acao: TipoAcao, descricao: string, entidade?: string, entidadeId?: number) {
+  public static build(
+    usuarioId: number,
+    acao: TipoAcao,
+    descricao: string,
+    entidade?: string,
+    entidadeId?: number
+  ) {
     const props: LogProps = {
       id: randomUUID(),
       usuarioId,
@@ -53,15 +59,29 @@ export class Log {
     entidade?: string,
     entidadeId?: string
   ) {
+    // 🔒 Conversões seguras
+    const usuarioIdNum = Number(usuarioId)
+    const entidadeIdNum = entidadeId ? Number(entidadeId) : null
+
+    // 🔒 Validações
+    if (isNaN(usuarioIdNum)) {
+      throw new Error("usuarioId inválido")
+    }
+
+    if (entidadeId && isNaN(entidadeIdNum!)) {
+      throw new Error("entidadeId inválido")
+    }
+
     const props: LogProps = {
       id,
-      usuarioId,
+      usuarioId: usuarioIdNum,
       acao,
       descricao,
       entidade: entidade || null,
-      entidadeId: entidadeId || null,
+      entidadeId: entidadeIdNum,
       dataCriacao
     }
+
     return new Log(props)
   }
 
