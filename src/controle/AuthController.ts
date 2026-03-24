@@ -8,7 +8,7 @@ import { usuarioDAO, logDAO } from '../dao';
 import { hashSenha, compararSenha } from '../util/criptografia';
 import { gerarToken } from '../util/jwt';
 import { sucesso, erro, naoAutorizado } from '../util/respostas';
-import { TipoUsuario, TipoAcao, UsuarioPublico } from '../modelo';
+import { TipoUsuario, TipoAcao, UsuarioPublico, Log } from '../modelo';
 import type { LoginResposta } from '../modelo';
 
 /**
@@ -23,13 +23,11 @@ export class AuthController {
     try {
       const { email, senha } = req.body;
 
-      // Validação básica
       if (!email || !senha) {
         erro(res, 'Email e senha são obrigatórios');
         return;
       }
 
-      // Busca usuário por email
       const usuario = await usuarioDAO.buscarPorEmail(email);
 
       if (!usuario) {
@@ -37,7 +35,6 @@ export class AuthController {
         return;
       }
 
-      // Verifica senha
       const senhaValida = await compararSenha(senha, usuario.senha);
 
       if (!senhaValida) {
@@ -45,7 +42,6 @@ export class AuthController {
         return;
       }
 
-      // Gera token JWT
       const token = gerarToken({
         id: usuario.id!,
         nome: usuario.nome,
@@ -53,16 +49,17 @@ export class AuthController {
         tipo: usuario.tipo
       });
 
-      // Registra log de login
-      await logDAO.registrar({
-        usuario_id: usuario.id!,
-        acao: TipoAcao.LOGIN,
-        descricao: `Usuário ${usuario.nome} realizou login`,
-        entidade: 'usuarios',
-        entidade_id: usuario.id!
-      });
+      // ✅ LOG CORRIGIDO
+      const log = Log.build(
+        usuario.id!,
+        TipoAcao.LOGIN,
+        `Usuário ${usuario.nome} realizou login`,
+        'usuarios',
+        usuario.id!
+      );
 
-      // Retorna resposta de sucesso
+      await logDAO.registrar(log);
+
       const resposta: LoginResposta = {
         token,
         usuario: {
@@ -88,31 +85,25 @@ export class AuthController {
       const { nome, email, senha, tipo } = req.body;
       const usuarioLogado = req.usuario;
 
-      // Validação básica
       if (!nome || !email || !senha || !tipo) {
         erro(res, 'Nome, email, senha e tipo são obrigatórios');
         return;
       }
 
-      // Valida tipo de usuário
       if (!Object.values(TipoUsuario).includes(tipo)) {
         erro(res, 'Tipo de usuário inválido. Use DONO ou FUNCIONARIO');
         return;
       }
 
-      // Verifica se email já existe
       const usuarioExistente = await usuarioDAO.buscarPorEmail(email);
       if (usuarioExistente) {
         erro(res, 'Este email já está cadastrado');
         return;
       }
 
-      // Regras de criação de usuários
       const existeDono = await usuarioDAO.existeDono();
 
       if (tipo === TipoUsuario.DONO) {
-        // Só permite criar DONO se não existir nenhum ainda
-        // Ou se um DONO autenticado estiver criando
         if (existeDono && (!usuarioLogado || usuarioLogado.tipo !== TipoUsuario.DONO)) {
           erro(res, 'Já existe um dono cadastrado. Apenas o dono pode cadastrar outro dono.', 403);
           return;
@@ -120,17 +111,14 @@ export class AuthController {
       }
 
       if (tipo === TipoUsuario.FUNCIONARIO) {
-        // Funcionário só pode ser criado por um DONO autenticado
         if (!usuarioLogado || usuarioLogado.tipo !== TipoUsuario.DONO) {
           erro(res, 'Apenas o dono pode cadastrar funcionários', 403);
           return;
         }
       }
 
-      // Criptografa a senha
       const senhaCriptografada = await hashSenha(senha);
 
-      // Cria o usuário
       const novoId = await usuarioDAO.criar({
         nome,
         email,
@@ -138,17 +126,19 @@ export class AuthController {
         tipo
       });
 
-      // Registra log de cadastro
-      await logDAO.registrar({
-        usuario_id: usuarioLogado?.id || novoId,
-        acao: TipoAcao.CADASTRO_USUARIO,
-        descricao: `Usuário ${nome} (${tipo}) cadastrado`,
-        entidade: 'usuarios',
-        entidade_id: novoId
-      });
+      // ✅ LOG CORRIGIDO
+      const log = Log.build(
+        usuarioLogado?.id || novoId,
+        TipoAcao.CADASTRO_USUARIO,
+        `Usuário ${nome} (${tipo}) cadastrado`,
+        'usuarios',
+        novoId
+      );
 
-      // Busca usuário criado (sem senha)
+      await logDAO.registrar(log);
+
       const usuarioCriado = await usuarioDAO.buscarPorId(novoId);
+
       const usuarioPublico: UsuarioPublico = {
         id: usuarioCriado!.id!,
         nome: usuarioCriado!.nome,
@@ -200,5 +190,4 @@ export class AuthController {
   }
 }
 
-// Exporta instância singleton
 export const authController = new AuthController();
