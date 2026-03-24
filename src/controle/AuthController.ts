@@ -8,7 +8,8 @@ import { usuarioDAO, logDAO } from '../dao';
 import { hashSenha, compararSenha } from '../util/criptografia';
 import { gerarToken } from '../util/jwt';
 import { sucesso, erro, naoAutorizado } from '../util/respostas';
-import { TipoUsuario, TipoAcao, LoginResposta, UsuarioPublico } from '../modelo';
+import { TipoUsuario, TipoAcao, UsuarioPublico } from '../modelo';
+import type { LoginResposta } from '../modelo';
 
 /**
  * Classe Controller para autenticação
@@ -58,7 +59,7 @@ export class AuthController {
         acao: TipoAcao.LOGIN,
         descricao: `Usuário ${usuario.nome} realizou login`,
         entidade: 'usuarios',
-        entidade_id: usuario.id
+        entidade_id: usuario.id!
       });
 
       // Retorna resposta de sucesso
@@ -153,7 +154,7 @@ export class AuthController {
         nome: usuarioCriado!.nome,
         email: usuarioCriado!.email,
         tipo: usuarioCriado!.tipo,
-        data_criacao: usuarioCriado!.data_criacao!
+        dataCriacao: usuarioCriado!.dataCriacao
       };
 
       sucesso(res, usuarioPublico, 'Usuário cadastrado com sucesso', 201);
@@ -188,7 +189,7 @@ export class AuthController {
         nome: usuario.nome,
         email: usuario.email,
         tipo: usuario.tipo,
-        data_criacao: usuario.data_criacao!
+        dataCriacao: usuario.dataCriacao
       };
 
       sucesso(res, usuarioPublico, 'Perfil obtido com sucesso');

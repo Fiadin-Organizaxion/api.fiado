@@ -5,7 +5,7 @@
 
 import { query } from '../util/database'
 import { Fiado, StatusFiado } from '../modelo/Fiado'
-import { FiltroFiadoDTO, FiadoComClienteDTO, ResumoFinanceiroDTO } from '../dto/FiadoDTO'
+import { FiltroFiadoDTO, FiadoComClienteDTO, ResumoFinanceiroDTO } from '../dto/FiadoDto'
 import { ResultSetHeader, RowDataPacket } from 'mysql2'
 
 // Interface para resultados do banco
@@ -76,7 +76,7 @@ export class FiadoDAO {
     const sql = 'SELECT * FROM fiados WHERE id = ?'
     const rows = await query<FiadoRow[]>(sql, [id])
     
-    return rows.length > 0 ? this.toEntity(rows[0]) : null
+    return rows.length > 0 ? this.toEntity(rows[0]!) : null
   }
 
   async listarTodos(): Promise<Fiado[]> {
@@ -194,10 +194,10 @@ export class FiadoDAO {
     const rows = await query<ResumoRow[]>(sql)
     
     return {
-      totalAberto: Number(rows[0].total_aberto),
-      totalQuitado: Number(rows[0].total_quitado),
-      quantidadeAbertos: Number(rows[0].quantidade_abertos),
-      quantidadeQuitados: Number(rows[0].quantidade_quitados)
+      totalAberto: Number(rows[0]?.total_aberto || 0),
+      totalQuitado: Number(rows[0]?.total_quitado || 0),
+      quantidadeAbertos: Number(rows[0]?.quantidade_abertos || 0),
+      quantidadeQuitados: Number(rows[0]?.quantidade_quitados || 0)
     }
   }
 }

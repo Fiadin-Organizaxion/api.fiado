@@ -1,6 +1,6 @@
-import { Log, TipoAcao } from '../modelo/Log'
+import { Log, TipoAcao } from '../modelo'
 import { logDAO } from '../dao'
-import { CriarLogDTO, LogRespostaDTO, FiltroLogDTO } from '../dto/LogDTO'
+import { CriarLogDTO, LogRespostaDTO, FiltroLogDTO } from '../dto'
 
 export class LogServico {
   
@@ -28,7 +28,13 @@ export class LogServico {
     )
 
     // Persistir no banco
-    await logDAO.criar(log)
+    await logDAO.registrar({
+      usuario_id: dto.usuarioId,
+      acao: dto.acao,
+      descricao: dto.descricao,
+      entidade: dto.entidade || null,
+      entidade_id: dto.entidadeId || null
+    })
 
     return this.toRespostaDTO(log)
   }
@@ -103,7 +109,8 @@ export class LogServico {
   }
 
   async buscarPorId(id: string): Promise<LogRespostaDTO | null> {
-    const log = await logDAO.buscarPorId(id)
+    const logs = await logDAO.listarTodos(1)
+    const log = logs.find(l => l.id === id)
     if (!log) {
       return null
     }
@@ -130,7 +137,7 @@ export class LogServico {
     return logs.map(l => this.toRespostaDTO(l))
   }
 
-  async listarPorEntidade(entidade: string, entidadeId: string): Promise<LogRespostaDTO[]> {
+  async listarPorEntidade(entidade: string, entidadeId?: string): Promise<LogRespostaDTO[]> {
     const logs = await logDAO.listarPorEntidade(entidade, entidadeId)
     return logs.map(l => this.toRespostaDTO(l))
   }

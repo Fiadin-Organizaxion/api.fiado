@@ -17,7 +17,7 @@ export type AtualizarUsuarioDTO = {
 
 // DTO para resposta pública de usuário (saída - sem senha)
 export type UsuarioRespostaDTO = {
-  id: string
+  id: number
   nome: string
   email: string
   tipo: TipoUsuario
@@ -34,7 +34,7 @@ export type LoginDTO = {
 export type LoginRespostaDTO = {
   token: string
   usuario: {
-    id: string
+    id: number
     nome: string
     tipo: TipoUsuario
   }
@@ -42,7 +42,7 @@ export type LoginRespostaDTO = {
 
 // DTO para payload do JWT
 export type JwtPayloadDTO = {
-  id: string
+  id: number
   nome: string
   email: string
   tipo: TipoUsuario

@@ -10,7 +10,7 @@ const dbConfig = {
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '3306'),
   user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '',
+  password: process.env.DB_PASSWORD || '123',
   database: process.env.DB_NAME || 'fiado_db',
   waitForConnections: true,
   connectionLimit: 10,
@@ -26,7 +26,7 @@ const pool = mysql.createPool(dbConfig);
  * @param params - Parâmetros para a query (previne SQL injection)
  * @returns Resultado da query
  */
-export async function query<T>(sql: string, params?: unknown[]): Promise<T> {
+export async function query<T>(sql: string, params?: any[]): Promise<T> {
   const [rows] = await pool.execute(sql, params);
   return rows as T;
 }

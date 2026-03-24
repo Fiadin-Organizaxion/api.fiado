@@ -3,4 +3,4 @@
  */
 
 export * from './UsuarioDAO';
-export * from './LogDAO';
+export * from './logDAO';

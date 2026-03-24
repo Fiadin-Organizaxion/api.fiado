@@ -8,7 +8,7 @@ import {
   FiadoComClienteDTO,
   FiltroFiadoDTO,
   ResumoFinanceiroDTO 
-} from '../dto/FiadoDTO'
+} from '../dto/FiadoDto'
 
 export class FiadoServico {
   

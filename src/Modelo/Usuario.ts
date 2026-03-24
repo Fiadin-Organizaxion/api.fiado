@@ -6,7 +6,7 @@ export enum TipoUsuario {
 }
 
 export type UsuarioProps = {
-  id: string
+  id: number | undefined
   nome: string
   email: string
   senha: string
@@ -19,7 +19,7 @@ export class Usuario {
 
   public static build(nome: string, email: string, senha: string, tipo: TipoUsuario) {
     const props: UsuarioProps = {
-      id: randomUUID(),
+      id: undefined,
       nome,
       email,
       senha,
@@ -29,7 +29,7 @@ export class Usuario {
     return new Usuario(props)
   }
 
-  public static construir(id: string, nome: string, email: string, senha: string, tipo: TipoUsuario, dataCriacao: Date) {
+  public static construir(id: number, nome: string, email: string, senha: string, tipo: TipoUsuario, dataCriacao: Date) {
     const props: UsuarioProps = {
       id,
       nome,

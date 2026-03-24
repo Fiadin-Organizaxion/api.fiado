@@ -5,7 +5,7 @@
 
 import { query } from '../util/database'
 import { Cliente } from '../modelo/Cliente'
-import { ClienteComFiadosDTO } from '../dto/ClienteDTO'
+import { ClienteComFiadosDTO } from '../dto/ClienteDto'
 import { ResultSetHeader, RowDataPacket } from 'mysql2'
 
 // Interface para resultados do banco
@@ -61,7 +61,7 @@ export class ClienteDAO {
     const sql = 'SELECT * FROM clientes WHERE id = ?'
     const rows = await query<ClienteRow[]>(sql, [id])
     
-    return rows.length > 0 ? this.toEntity(rows[0]) : null
+    return rows.length > 0 ? this.toEntity(rows[0]!) : null
   }
 
   async listarTodos(): Promise<Cliente[]> {
@@ -132,7 +132,7 @@ export class ClienteDAO {
     `
     const rows = await query<Array<{ total: number }>>(sql, [clienteId])
     
-    return rows[0].total > 0
+    return rows.length > 0 ? (rows[0]!).total > 0 : false
   }
 }
 

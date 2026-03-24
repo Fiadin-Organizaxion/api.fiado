@@ -12,18 +12,26 @@ export enum TipoAcao {
 
 export type LogProps = {
   id: string
-  usuarioId: string
+  usuarioId: number
   acao: TipoAcao
   descricao: string
   entidade: string | null
-  entidadeId: string | null
+  entidadeId: number | null
   dataCriacao: Date
+}
+
+export type LogCriacao = {
+  usuario_id: number
+  acao: TipoAcao
+  descricao: string
+  entidade: string | null
+  entidade_id: number | null
 }
 
 export class Log {
   private constructor(readonly props: LogProps) {}
 
-  public static build(usuarioId: string, acao: TipoAcao, descricao: string, entidade?: string, entidadeId?: string) {
+  public static build(usuarioId: number, acao: TipoAcao, descricao: string, entidade?: string, entidadeId?: number) {
     const props: LogProps = {
       id: randomUUID(),
       usuarioId,

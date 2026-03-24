@@ -42,7 +42,7 @@ export class LogDAO {
    * @param limite - Limite de resultados (padrão: 100)
    * @returns Lista de logs do usuário
    */
-  async buscarPorUsuario(usuarioId: number, limite = 100): Promise<Log[]> {
+  async buscarPorUsuario(usuarioId: string, limite = 100): Promise<Log[]> {
     const sql = `
       SELECT * FROM logs 
       WHERE usuario_id = ? 
@@ -52,6 +52,13 @@ export class LogDAO {
     const rows = await query<LogRow[]>(sql, [usuarioId, limite]);
     
     return rows;
+  }
+
+  /**
+   * Alias para buscarPorUsuario
+   */
+  async listarPorUsuario(usuarioId: string, limite = 100): Promise<Log[]> {
+    return this.buscarPorUsuario(usuarioId, limite);
   }
 
   /**
@@ -73,12 +80,19 @@ export class LogDAO {
   }
 
   /**
+   * Alias para buscarPorAcao
+   */
+  async listarPorAcao(acao: TipoAcao, limite = 100): Promise<Log[]> {
+    return this.buscarPorAcao(acao, limite);
+  }
+
+  /**
    * Busca logs por entidade
    * @param entidade - Nome da entidade
    * @param entidadeId - ID da entidade (opcional)
    * @returns Lista de logs da entidade
    */
-  async buscarPorEntidade(entidade: string, entidadeId?: number): Promise<Log[]> {
+  async buscarPorEntidade(entidade: string, entidadeId?: string): Promise<Log[]> {
     let sql = 'SELECT * FROM logs WHERE entidade = ?';
     const params: unknown[] = [entidade];
 
@@ -94,12 +108,35 @@ export class LogDAO {
   }
 
   /**
+   * Alias para buscarPorEntidade
+   */
+  async listarPorEntidade(entidade: string, entidadeId?: string): Promise<Log[]> {
+    return this.buscarPorEntidade(entidade, entidadeId);
+  }
+
+  /**
+   * Lista todos os logs sem paginação
+   * @param limite - Limite de resultados (padrão: 1000)
+   * @returns Lista de logs
+   */
+  async listarTodos(limite = 1000): Promise<Log[]> {
+    const sql = `
+      SELECT * FROM logs 
+      ORDER BY data_criacao DESC 
+      LIMIT ?
+    `;
+    const rows = await query<LogRow[]>(sql, [limite]);
+    
+    return rows;
+  }
+
+  /**
    * Lista todos os logs com paginação
    * @param pagina - Número da página (começa em 1)
    * @param porPagina - Quantidade por página
    * @returns Lista de logs paginada
    */
-  async listarTodos(pagina = 1, porPagina = 50): Promise<Log[]> {
+  async listarTodosPaginado(pagina = 1, porPagina = 50): Promise<Log[]> {
     const offset = (pagina - 1) * porPagina;
     const sql = `
       SELECT * FROM logs 
@@ -112,6 +149,46 @@ export class LogDAO {
   }
 
   /**
+   * Lista logs com filtros
+   * @param filtros - Objeto com filtros (usuarioId, acao, entidade, dataInicio, dataFim)
+   * @returns Lista de logs filtrada
+   */
+  async listarComFiltros(filtros: { usuarioId?: string; acao?: TipoAcao; entidade?: string; dataInicio?: Date; dataFim?: Date }): Promise<Log[]> {
+    let sql = 'SELECT * FROM logs WHERE 1=1';
+    const params: unknown[] = [];
+
+    if (filtros.usuarioId) {
+      sql += ' AND usuario_id = ?';
+      params.push(filtros.usuarioId);
+    }
+
+    if (filtros.acao) {
+      sql += ' AND acao = ?';
+      params.push(filtros.acao);
+    }
+
+    if (filtros.entidade) {
+      sql += ' AND entidade = ?';
+      params.push(filtros.entidade);
+    }
+
+    if (filtros.dataInicio) {
+      sql += ' AND data_criacao >= ?';
+      params.push(filtros.dataInicio);
+    }
+
+    if (filtros.dataFim) {
+      sql += ' AND data_criacao <= ?';
+      params.push(filtros.dataFim);
+    }
+
+    sql += ' ORDER BY data_criacao DESC';
+    const rows = await query<LogRow[]>(sql, params);
+    
+    return rows;
+  }
+
+  /**
    * Conta total de logs
    * @returns Total de logs registrados
    */
@@ -119,7 +196,7 @@ export class LogDAO {
     const sql = 'SELECT COUNT(*) as total FROM logs';
     const rows = await query<Array<{ total: number }>>(sql);
     
-    return rows[0].total;
+    return rows[0]?.total || 0;
   }
 }
 

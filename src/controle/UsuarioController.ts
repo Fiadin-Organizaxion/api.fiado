@@ -41,7 +41,7 @@ export class UsuarioController {
    */
   async buscarPorId(req: Request, res: Response): Promise<void> {
     try {
-      const id = parseInt(req.params.id);
+      const id = parseInt(req.params.id as string);
 
       if (isNaN(id)) {
         erro(res, 'ID inválido');
@@ -60,7 +60,7 @@ export class UsuarioController {
         nome: usuario.nome,
         email: usuario.email,
         tipo: usuario.tipo,
-        data_criacao: usuario.data_criacao!
+        dataCriacao: usuario.dataCriacao!
       };
 
       sucesso(res, usuarioPublico, 'Usuário encontrado');
@@ -76,7 +76,7 @@ export class UsuarioController {
    */
   async remover(req: Request, res: Response): Promise<void> {
     try {
-      const id = parseInt(req.params.id);
+      const id = parseInt(req.params.id as string);
       const usuarioLogado = req.usuario;
 
       if (isNaN(id)) {

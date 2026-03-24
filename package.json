@@ -1,6 +1,9 @@
 {
   "dependencies": {
-    "express": "^5.2.1"
+    "@types/cors": "^2.8.19",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
+    "mysql2": "^3.20.0"
   },
   "name": "api.fiado",
   "version": "1.0.0",
@@ -14,7 +17,7 @@
     "typescript": "^5.9.3"
   },
   "scripts": {
-    "dev": "tsx watch server.ts",
+    "dev": "nodemon --exec ts-node src/server.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],

@@ -44,7 +44,8 @@ export class UsuarioDAO {
     const sql = 'SELECT * FROM usuarios WHERE id = ?';
     const rows = await query<UsuarioRow[]>(sql, [id]);
     
-    return rows.length > 0 ? rows[0] : null;
+    if (!rows || rows.length === 0) return null;
+    return rows[0] as Usuario;
   }
 
   /**
@@ -56,7 +57,8 @@ export class UsuarioDAO {
     const sql = 'SELECT * FROM usuarios WHERE email = ?';
     const rows = await query<UsuarioRow[]>(sql, [email]);
     
-    return rows.length > 0 ? rows[0] : null;
+    if (!rows || rows.length === 0) return null;
+    return rows[0] as Usuario;
   }
 
   /**
@@ -134,7 +136,8 @@ export class UsuarioDAO {
     const sql = 'SELECT COUNT(*) as total FROM usuarios WHERE tipo = ?';
     const rows = await query<Array<{ total: number }>>(sql, [TipoUsuario.DONO]);
     
-    return rows[0].total > 0;
+    if (!rows || rows.length === 0) return false;
+    return (rows[0] as { total: number }).total > 0;
   }
 
   /**
@@ -145,7 +148,8 @@ export class UsuarioDAO {
     const sql = 'SELECT COUNT(*) as total FROM usuarios';
     const rows = await query<Array<{ total: number }>>(sql);
     
-    return rows[0].total;
+    if (!rows || rows.length === 0) return 0;
+    return (rows[0] as { total: number }).total;
   }
 }
 
