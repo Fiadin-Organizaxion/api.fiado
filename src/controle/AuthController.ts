@@ -82,6 +82,7 @@ export class AuthController {
    */
   async cadastrar(req: Request, res: Response): Promise<void> {
     try {
+      console.log('BODY RECEBIDO:', req.body);
       const { nome, email, senha, tipo } = req.body;
       const usuarioLogado = req.usuario;
 

@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import express, { Request, Response, NextFunction } from 'express'
 import cors from 'cors'
 
@@ -12,7 +13,7 @@ import categoriaRoutes from './api/categoriaRoutes'
 
 // Cria a aplicação Express
 const app = express()
-const PORT = process.env.PORT
+const PORT = process.env.PORT || 3001
 
 // ==========================================
 // MIDDLEWARES GLOBAIS

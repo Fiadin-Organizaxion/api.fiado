@@ -1,42 +1,37 @@
-/**
- * Configuração de conexão com o banco de dados MySQL/MariaDB
- * Utiliza mysql2 com pool de conexões para melhor performance
- */
+import { Pool } from 'pg'
 
-import mysql from 'mysql2/promise';
-
-// Configurações do banco de dados (sem dotenv, usando variáveis de ambiente)
-const dbConfig = {
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '3306'),
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || '123',
-  database: process.env.DB_NAME || 'fiado_db',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-};
-
-// Pool de conexões
-const pool = mysql.createPool(dbConfig);
+// Configuração usando a connection string do Supabase
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false
+  },
+  max: 10 // máximo de conexões no pool
+})
 
 /**
  * Executa uma query no banco de dados
- * @param sql - Query SQL a ser executada
- * @param params - Parâmetros para a query (previne SQL injection)
- * @returns Resultado da query
  */
 export async function query<T>(sql: string, params?: any[]): Promise<T> {
-  const [rows] = await pool.execute(sql, params);
-  return rows as T;
+  try {
+    const result = await pool.query(sql, params)
+    return result.rows as T
+  } catch (error) {
+    console.error('Erro ao executar query:', error)
+    throw error
+  }
 }
 
 /**
  * Obtém uma conexão do pool
- * Útil para transações
  */
 export async function getConnection() {
-  return await pool.getConnection();
+  try {
+    return await pool.connect()
+  } catch (error) {
+    console.error('Erro ao obter conexão do pool:', error)
+    throw error
+  }
 }
 
 /**
@@ -44,14 +39,20 @@ export async function getConnection() {
  */
 export async function testarConexao(): Promise<boolean> {
   try {
-    const connection = await pool.getConnection();
-    console.log('Conexão com o banco de dados estabelecida com sucesso!');
-    connection.release();
-    return true;
+    const client = await pool.connect()
+
+    const result = await client.query('SELECT NOW()')
+
+    console.log('✅ Conexão com o Supabase estabelecida com sucesso!')
+    console.log('🕒 Horário do banco:', result.rows[0].now)
+
+    client.release()
+    return true
+
   } catch (error) {
-    console.error('Erro ao conectar com o banco de dados:', error);
-    return false;
+    console.error('❌ Erro ao conectar com o banco:', error)
+    return false
   }
 }
 
-export default pool;
+export default pool

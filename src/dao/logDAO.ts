@@ -1,23 +1,11 @@
 import { query } from '../util/database';
 import { Log, TipoAcao } from '../modelo';
-import { RowDataPacket } from 'mysql2';
-
-// Interface para resultados do banco
-interface LogRow extends RowDataPacket {
-  id: string;
-  usuario_id: number;
-  acao: TipoAcao;
-  descricao: string;
-  entidade: string | null;
-  entidade_id: number | null;
-  data_criacao: Date;
-}
 
 export class LogDAO {
   async registrar(log: Log): Promise<void> {
     const sql = `
       INSERT INTO logs (id, usuario_id, acao, descricao, entidade, entidade_id, data_criacao)
-      VALUES (?, ?, ?, ?, ?, ?, NOW())
+      VALUES ($1, $2, $3, $4, $5, $6, NOW())
     `;
     
     await query(sql, [
@@ -33,12 +21,12 @@ export class LogDAO {
   async buscarPorUsuario(usuarioId: string, limite = 100): Promise<Log[]> {
     const sql = `
       SELECT * FROM logs 
-      WHERE usuario_id = ? 
+      WHERE usuario_id = $1 
       ORDER BY data_criacao DESC 
-      LIMIT ?
+      LIMIT $2
     `;
 
-    const rows = await query<LogRow[]>(sql, [usuarioId, limite]);
+    const rows = await query<any[]>(sql, [usuarioId, limite]);
 
     return rows.map(row =>
       Log.construir(
@@ -60,12 +48,12 @@ export class LogDAO {
   async buscarPorAcao(acao: TipoAcao, limite = 100): Promise<Log[]> {
     const sql = `
       SELECT * FROM logs 
-      WHERE acao = ? 
+      WHERE acao = $1 
       ORDER BY data_criacao DESC 
-      LIMIT ?
+      LIMIT $2
     `;
 
-    const rows = await query<LogRow[]>(sql, [acao, limite]);
+    const rows = await query<any[]>(sql, [acao, limite]);
 
     return rows.map(row =>
       Log.construir(
@@ -85,17 +73,17 @@ export class LogDAO {
   }
 
   async buscarPorEntidade(entidade: string, entidadeId?: string): Promise<Log[]> {
-    let sql = 'SELECT * FROM logs WHERE entidade = ?';
+    let sql = 'SELECT * FROM logs WHERE entidade = $1';
     const params: unknown[] = [entidade];
 
     if (entidadeId) {
-      sql += ' AND entidade_id = ?';
+      sql += ' AND entidade_id = $2';
       params.push(entidadeId);
     }
 
     sql += ' ORDER BY data_criacao DESC';
 
-    const rows = await query<LogRow[]>(sql, params);
+    const rows = await query<any[]>(sql, params);
 
     return rows.map(row =>
       Log.construir(
@@ -118,10 +106,10 @@ export class LogDAO {
     const sql = `
       SELECT * FROM logs 
       ORDER BY data_criacao DESC 
-      LIMIT ?
+      LIMIT $1
     `;
 
-    const rows = await query<LogRow[]>(sql, [limite]);
+    const rows = await query<any[]>(sql, [limite]);
 
     return rows.map(row =>
       Log.construir(
@@ -142,10 +130,10 @@ export class LogDAO {
     const sql = `
       SELECT * FROM logs 
       ORDER BY data_criacao DESC 
-      LIMIT ? OFFSET ?
+      LIMIT $1 OFFSET $2
     `;
 
-    const rows = await query<LogRow[]>(sql, [porPagina, offset]);
+    const rows = await query<any[]>(sql, [porPagina, offset]);
 
     return rows.map(row =>
       Log.construir(
@@ -171,33 +159,33 @@ export class LogDAO {
     const params: unknown[] = [];
 
     if (filtros.usuarioId) {
-      sql += ' AND usuario_id = ?';
+      sql += ' AND usuario_id = $' + (params.length + 1);
       params.push(filtros.usuarioId);
     }
 
     if (filtros.acao) {
-      sql += ' AND acao = ?';
+      sql += ' AND acao = $' + (params.length + 1);
       params.push(filtros.acao);
     }
 
     if (filtros.entidade) {
-      sql += ' AND entidade = ?';
+      sql += ' AND entidade = $' + (params.length + 1);
       params.push(filtros.entidade);
     }
 
     if (filtros.dataInicio) {
-      sql += ' AND data_criacao >= ?';
+      sql += ' AND data_criacao >= $' + (params.length + 1);
       params.push(filtros.dataInicio);
     }
 
     if (filtros.dataFim) {
-      sql += ' AND data_criacao <= ?';
+      sql += ' AND data_criacao <= $' + (params.length + 1);
       params.push(filtros.dataFim);
     }
 
     sql += ' ORDER BY data_criacao DESC';
 
-    const rows = await query<LogRow[]>(sql, params);
+    const rows = await query<any[]>(sql, params);
 
     return rows.map(row =>
       Log.construir(
