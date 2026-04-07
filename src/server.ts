@@ -1,5 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express'
 import cors from 'cors'
+import 'dotenv/config'
 
 import { testarConexao } from './util/database'
 
@@ -12,7 +13,7 @@ import categoriaRoutes from './api/categoriaRoutes'
 
 // Cria a aplicação Express
 const app = express()
-const PORT = process.env.PORT
+const PORT = Number(process.env.PORT) || 3000
 
 // ==========================================
 // MIDDLEWARES GLOBAIS
