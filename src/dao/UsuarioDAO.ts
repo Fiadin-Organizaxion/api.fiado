@@ -4,7 +4,8 @@
  */
 
 import { query } from '../util/database';
-import { Usuario, UsuarioCriacao, UsuarioPublico, TipoUsuario } from '../modelo';
+import { Usuario, TipoUsuario } from '../modelo/Usuario';
+import { CriarUsuarioDTO, UsuarioRespostaDTO } from '../dto/UsuarioDto';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 
 // Interface para resultados do banco
@@ -19,7 +20,7 @@ export class UsuarioDAO {
    * @param usuario - Dados do usuário a ser criado
    * @returns ID do usuário criado
    */
-  async criar(usuario: UsuarioCriacao): Promise<number> {
+  async criar(usuario: CriarUsuarioDTO): Promise<number> {
     const sql = `
       INSERT INTO usuarios (nome, email, senha, tipo, data_criacao)
       VALUES (?, ?, ?, ?, NOW())
@@ -65,9 +66,9 @@ export class UsuarioDAO {
    * Lista todos os usuários (sem senha)
    * @returns Lista de usuários públicos
    */
-  async listarTodos(): Promise<UsuarioPublico[]> {
+  async listarTodos(): Promise<UsuarioRespostaDTO[]> {
     const sql = 'SELECT id, nome, email, tipo, data_criacao FROM usuarios ORDER BY data_criacao DESC';
-    const rows = await query<UsuarioPublico[]>(sql);
+    const rows = await query<UsuarioRespostaDTO[]>(sql);
     
     return rows;
   }
@@ -77,9 +78,9 @@ export class UsuarioDAO {
    * @param tipo - Tipo do usuário (DONO ou FUNCIONARIO)
    * @returns Lista de usuários públicos do tipo especificado
    */
-  async listarPorTipo(tipo: TipoUsuario): Promise<UsuarioPublico[]> {
+  async listarPorTipo(tipo: TipoUsuario): Promise<UsuarioRespostaDTO[]> {
     const sql = 'SELECT id, nome, email, tipo, data_criacao FROM usuarios WHERE tipo = ? ORDER BY data_criacao DESC';
-    const rows = await query<UsuarioPublico[]>(sql, [tipo]);
+    const rows = await query<UsuarioRespostaDTO[]>(sql, [tipo]);
     
     return rows;
   }
@@ -90,7 +91,7 @@ export class UsuarioDAO {
    * @param dados - Dados a serem atualizados
    * @returns true se atualizado com sucesso
    */
-  async atualizar(id: number, dados: Partial<UsuarioCriacao>): Promise<boolean> {
+  async atualizar(id: number, dados: Partial<CriarUsuarioDTO>): Promise<boolean> {
     const campos: string[] = [];
     const valores: unknown[] = [];
 
