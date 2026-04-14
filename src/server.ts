@@ -7,9 +7,6 @@ import { testarConexao } from './util/database'
 // ROTAS DA API
 import authRoutes from './api/authRoutes'
 import usuarioRoutes from './api/usuarioRoutes'
-import receitaRoutes from './api/receitaRoutes'
-import despesaRoutes from './api/despesaRoutes'
-import categoriaRoutes from './api/categoriaRoutes'
 
 // Cria a aplicação Express
 const app = express()
@@ -40,9 +37,6 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
 
 app.use(authRoutes)
 app.use(usuarioRoutes)
-app.use(receitaRoutes)
-app.use(despesaRoutes)
-app.use(categoriaRoutes)
 
 // ==========================================
 // MIDDLEWARE DE ERRO GLOBAL
