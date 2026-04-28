@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import express, { Request, Response, NextFunction } from 'express'
 import cors from 'cors'
 import 'dotenv/config'
@@ -13,7 +14,7 @@ import categoriaRoutes from './api/categoriaRoutes'
 
 // Cria a aplicação Express
 const app = express()
-const PORT = Number(process.env.PORT) || 3000
+const PORT = process.env.PORT
 
 // ==========================================
 // MIDDLEWARES GLOBAIS
@@ -81,7 +82,7 @@ async function iniciar() {
     if (!conexaoOk) {
       console.warn('Aviso: Não foi possível conectar ao banco de dados.')
       console.warn(
-        'Certifique-se de que o MySQL está rodando e as tabelas foram criadas.'
+        'Certifique-se de que o Supabase/PostgreSQL está acessível e a DATABASE_URL está correta.'
       )
     }
 

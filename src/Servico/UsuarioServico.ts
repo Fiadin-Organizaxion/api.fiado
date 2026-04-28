@@ -7,7 +7,7 @@ import {
   UsuarioRespostaDTO,
   LoginDTO,
   LoginRespostaDTO 
-} from '../dto/UsuarioDTO'
+} from '../dto/UsuarioDto'
 import { gerarToken } from '../util/jwt'
 
 export class UsuarioServico {
@@ -24,44 +24,45 @@ export class UsuarioServico {
   }
 
   async criar(dto: CriarUsuarioDTO): Promise<UsuarioRespostaDTO> {
-    // Verificar se já existe usuário com este email
     const usuarioExistente = await usuarioDAO.buscarPorEmail(dto.email)
     if (usuarioExistente) {
       throw new Error('Email já cadastrado')
     }
 
-    // Se for o primeiro usuário, deve ser DONO
     const totalUsuarios = await usuarioDAO.contarTotal()
     if (totalUsuarios === 0 && dto.tipo !== TipoUsuario.DONO) {
       throw new Error('O primeiro usuário deve ser do tipo DONO')
     }
 
-    // Hash da senha
     const senhaHash = await hashSenha(dto.senha)
 
-    // Criar entidade Usuario
     const usuario = Usuario.build(dto.nome, dto.email, senhaHash, dto.tipo)
 
-    // Persistir no banco
-    await usuarioDAO.criar(usuario)
+    // 🔥 CORREÇÃO AQUI
+    const id = await usuarioDAO.criar({
+      nome: usuario.nome,
+      email: usuario.email,
+      senha: usuario.senha,
+      tipo: usuario.tipo
+    })
+
+    // Atualiza o ID na entidade
+    usuario.id = id
 
     return this.toRespostaDTO(usuario)
   }
 
   async login(dto: LoginDTO): Promise<LoginRespostaDTO> {
-    // Buscar usuário por email
     const usuario = await usuarioDAO.buscarPorEmail(dto.email)
     if (!usuario) {
       throw new Error('Credenciais inválidas')
     }
 
-    // Verificar senha
     const senhaValida = await compararSenha(dto.senha, usuario.senha)
     if (!senhaValida) {
       throw new Error('Credenciais inválidas')
     }
 
-    // Gerar token JWT
     const token = gerarToken({
       id: usuario.id,
       nome: usuario.nome,
@@ -79,7 +80,7 @@ export class UsuarioServico {
     }
   }
 
-  async buscarPorId(id: string): Promise<UsuarioRespostaDTO | null> {
+  async buscarPorId(id: number): Promise<UsuarioRespostaDTO | null> {
     const usuario = await usuarioDAO.buscarPorId(id)
     if (!usuario) {
       return null
@@ -97,28 +98,25 @@ export class UsuarioServico {
 
   async listarTodos(): Promise<UsuarioRespostaDTO[]> {
     const usuarios = await usuarioDAO.listarTodos()
-    return usuarios.map(u => this.toRespostaDTO(u))
+    return usuarios.map(u => this.toRespostaDTO(u as Usuario))
   }
 
   async listarPorTipo(tipo: TipoUsuario): Promise<UsuarioRespostaDTO[]> {
     const usuarios = await usuarioDAO.listarPorTipo(tipo)
-    return usuarios.map(u => this.toRespostaDTO(u))
+    return usuarios.map(u => this.toRespostaDTO(u as Usuario))
   }
 
-  async atualizar(id: string, dto: AtualizarUsuarioDTO): Promise<UsuarioRespostaDTO> {
-    // Buscar usuário existente
+  async atualizar(id: number, dto: AtualizarUsuarioDTO): Promise<UsuarioRespostaDTO> {
     let usuario = await usuarioDAO.buscarPorId(id)
     if (!usuario) {
       throw new Error('Usuário não encontrado')
     }
 
-    // Aplicar alterações usando métodos imutáveis
     if (dto.nome) {
       usuario = usuario.alterarNome(dto.nome)
     }
 
     if (dto.email) {
-      // Verificar se novo email já está em uso
       const emailEmUso = await usuarioDAO.buscarPorEmail(dto.email)
       if (emailEmUso && emailEmUso.id !== id) {
         throw new Error('Email já está em uso')
@@ -131,19 +129,22 @@ export class UsuarioServico {
       usuario = usuario.alterarSenha(senhaHash)
     }
 
-    // Persistir alterações
-    await usuarioDAO.atualizar(usuario)
+    // 🔥 CORREÇÃO AQUI
+    await usuarioDAO.atualizar(id, {
+      nome: usuario.nome,
+      email: usuario.email,
+      senha: usuario.senha
+    })
 
     return this.toRespostaDTO(usuario)
   }
 
-  async excluir(id: string): Promise<void> {
+  async excluir(id: number): Promise<void> {
     const usuario = await usuarioDAO.buscarPorId(id)
     if (!usuario) {
       throw new Error('Usuário não encontrado')
     }
 
-    // Verificar se é o único DONO
     if (usuario.tipo === TipoUsuario.DONO) {
       const donos = await usuarioDAO.listarPorTipo(TipoUsuario.DONO)
       if (donos.length === 1) {
@@ -151,7 +152,8 @@ export class UsuarioServico {
       }
     }
 
-    await usuarioDAO.excluir(id)
+    // 🔥 CORREÇÃO AQUI
+    await usuarioDAO.remover(id)
   }
 }
 
