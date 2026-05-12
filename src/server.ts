@@ -8,6 +8,8 @@ import { testarConexao } from './util/database'
 // ROTAS DA API
 import authRoutes from './api/authRoutes'
 import usuarioRoutes from './api/usuarioRoutes'
+import clienteRoutes from './api/clienteRoutes'
+import fiadoRoutes from './api/fiadoRoutes'
 
 // Cria a aplicação Express
 const app = express()
@@ -38,6 +40,8 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
 
 app.use(authRoutes)
 app.use(usuarioRoutes)
+app.use(clienteRoutes)
+app.use(fiadoRoutes)
 
 // ==========================================
 // MIDDLEWARE DE ERRO GLOBAL

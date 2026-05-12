@@ -8,33 +8,37 @@ export class LogServico {
   private toRespostaDTO(log: Log): LogRespostaDTO {
     return {
       id: log.id,
-      usuarioId: log.usuarioId,
+      usuarioId: String(log.usuarioId),
       acao: log.acao,
       descricao: log.descricao,
       entidade: log.entidade,
-      entidadeId: log.entidadeId,
+      entidadeId: log.entidadeId !== null ? String(log.entidadeId) : null,
       dataCriacao: log.dataCriacao
     }
   }
 
   async registrar(dto: CriarLogDTO): Promise<LogRespostaDTO> {
+    const usuarioId = Number(dto.usuarioId)
+    if (Number.isNaN(usuarioId)) {
+      throw new Error('usuarioId inválido')
+    }
+
+    const entidadeId = dto.entidadeId !== undefined ? Number(dto.entidadeId) : undefined
+    if (dto.entidadeId !== undefined && Number.isNaN(entidadeId!)) {
+      throw new Error('entidadeId inválido')
+    }
+
     // Criar entidade Log
     const log = Log.build(
-      dto.usuarioId, 
-      dto.acao, 
-      dto.descricao, 
-      dto.entidade, 
-      dto.entidadeId
+      usuarioId,
+      dto.acao,
+      dto.descricao,
+      dto.entidade,
+      entidadeId
     )
 
     // Persistir no banco
-    await logDAO.registrar({
-      usuario_id: dto.usuarioId,
-      acao: dto.acao,
-      descricao: dto.descricao,
-      entidade: dto.entidade || null,
-      entidade_id: dto.entidadeId || null
-    })
+    await logDAO.registrar(log)
 
     return this.toRespostaDTO(log)
   }

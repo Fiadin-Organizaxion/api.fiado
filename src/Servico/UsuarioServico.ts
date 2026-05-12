@@ -12,10 +12,17 @@ import { gerarToken } from '../util/jwt'
 
 export class UsuarioServico {
   
+  private obterIdUsuario(usuario: Usuario): number {
+    if (usuario.id === undefined) {
+      throw new Error('ID do usuário não definido')
+    }
+    return usuario.id
+  }
+
   // Converte Usuario para DTO de resposta (sem senha)
   private toRespostaDTO(usuario: Usuario): UsuarioRespostaDTO {
     return {
-      id: usuario.id,
+      id: this.obterIdUsuario(usuario),
       nome: usuario.nome,
       email: usuario.email,
       tipo: usuario.tipo,
@@ -63,8 +70,10 @@ export class UsuarioServico {
       throw new Error('Credenciais inválidas')
     }
 
+    const id = this.obterIdUsuario(usuario)
+
     const token = gerarToken({
-      id: usuario.id,
+      id,
       nome: usuario.nome,
       email: usuario.email,
       tipo: usuario.tipo
@@ -73,7 +82,7 @@ export class UsuarioServico {
     return {
       token,
       usuario: {
-        id: usuario.id,
+        id,
         nome: usuario.nome,
         tipo: usuario.tipo
       }
