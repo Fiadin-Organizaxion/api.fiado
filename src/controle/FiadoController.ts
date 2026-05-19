@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import { fiadoServico } from '../servico'
+import { fiadoServico, logServico } from '../servico'
 import { sucesso, erro, naoEncontrado, naoAutorizado } from '../util/respostas'
 import { StatusFiado } from '../modelo/Fiado'
 import { CriarFiadoDTO, AtualizarFiadoDTO, FiltroFiadoDTO } from '../dto'
@@ -115,6 +115,17 @@ export class FiadoController {
       }
 
       const fiado = await fiadoServico.criar(dto, String(usuarioId))
+
+      try {
+        await logServico.registrarRegistroFiado(
+          String(usuarioId),
+          fiado.id,
+          fiado.valor
+        )
+      } catch (logError) {
+        console.error('Erro ao registrar log de cadastro de fiado:', logError)
+      }
+
       sucesso(res, fiado, 'Fiado cadastrado com sucesso', 201)
     } catch (error) {
       console.error('Erro ao cadastrar fiado:', error)
@@ -153,6 +164,18 @@ export class FiadoController {
       }
 
       const fiado = await fiadoServico.atualizar(id, dto)
+
+      try {
+        await logServico.registrarAtualizacao(
+          String(req.usuario?.id ?? '0'),
+          'fiado',
+          id,
+          `Fiado ${id} atualizado`
+        )
+      } catch (logError) {
+        console.error('Erro ao registrar log de atualização de fiado:', logError)
+      }
+
       sucesso(res, fiado, 'Fiado atualizado com sucesso')
     } catch (error) {
       console.error('Erro ao atualizar fiado:', error)
@@ -175,6 +198,17 @@ export class FiadoController {
       }
 
       const fiado = await fiadoServico.quitar(id)
+
+      try {
+        await logServico.registrarQuitacaoFiado(
+          String(req.usuario?.id ?? '0'),
+          fiado.id,
+          fiado.valor
+        )
+      } catch (logError) {
+        console.error('Erro ao registrar log de quitação de fiado:', logError)
+      }
+
       sucesso(res, fiado, 'Fiado quitado com sucesso')
     } catch (error) {
       console.error('Erro ao quitar fiado:', error)
@@ -197,6 +231,18 @@ export class FiadoController {
       }
 
       const fiado = await fiadoServico.reabrir(id)
+
+      try {
+        await logServico.registrarAtualizacao(
+          String(req.usuario?.id ?? '0'),
+          'fiado',
+          id,
+          `Fiado ${id} reaberto`
+        )
+      } catch (logError) {
+        console.error('Erro ao registrar log de reabertura de fiado:', logError)
+      }
+
       sucesso(res, fiado, 'Fiado reaberto com sucesso')
     } catch (error) {
       console.error('Erro ao reabrir fiado:', error)
@@ -219,6 +265,18 @@ export class FiadoController {
       }
 
       await fiadoServico.excluir(id)
+
+      try {
+        await logServico.registrarExclusao(
+          String(req.usuario?.id ?? '0'),
+          'fiado',
+          id,
+          `Fiado ${id} excluído`
+        )
+      } catch (logError) {
+        console.error('Erro ao registrar log de exclusão de fiado:', logError)
+      }
+
       sucesso(res, null, 'Fiado excluído com sucesso')
     } catch (error) {
       console.error('Erro ao excluir fiado:', error)

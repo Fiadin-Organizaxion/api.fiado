@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import { clienteServico } from '../servico'
+import { clienteServico, logServico } from '../servico'
 import { sucesso, erro, naoEncontrado, naoAutorizado } from '../util/respostas'
 import { CriarClienteDTO, AtualizarClienteDTO } from '../dto'
 
@@ -75,6 +75,17 @@ export class ClienteController {
       }
 
       const cliente = await clienteServico.criar(dto, String(usuarioId))
+
+      try {
+        await logServico.registrarCadastroCliente(
+          String(usuarioId),
+          cliente.id,
+          cliente.nome
+        )
+      } catch (logError) {
+        console.error('Erro ao registrar log de cadastro de cliente:', logError)
+      }
+
       sucesso(res, cliente, 'Cliente cadastrado com sucesso', 201)
     } catch (error) {
       console.error('Erro ao cadastrar cliente:', error)
@@ -94,6 +105,18 @@ export class ClienteController {
       }
 
       const cliente = await clienteServico.atualizar(id, dto)
+
+      try {
+        await logServico.registrarAtualizacao(
+          String(req.usuario?.id ?? '0'),
+          'cliente',
+          id,
+          `Cliente ${cliente.nome} atualizado`
+        )
+      } catch (logError) {
+        console.error('Erro ao registrar log de atualização de cliente:', logError)
+      }
+
       sucesso(res, cliente, 'Cliente atualizado com sucesso')
     } catch (error) {
       console.error('Erro ao atualizar cliente:', error)
@@ -116,6 +139,18 @@ export class ClienteController {
       }
 
       await clienteServico.excluir(id)
+
+      try {
+        await logServico.registrarExclusao(
+          String(req.usuario?.id ?? '0'),
+          'cliente',
+          id,
+          `Cliente ${id} excluído`
+        )
+      } catch (logError) {
+        console.error('Erro ao registrar log de exclusão de cliente:', logError)
+      }
+
       sucesso(res, null, 'Cliente excluído com sucesso')
     } catch (error) {
       console.error('Erro ao excluir cliente:', error)

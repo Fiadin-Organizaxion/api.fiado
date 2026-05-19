@@ -5,6 +5,7 @@
 
 import { Request, Response } from 'express';
 import { usuarioDAO } from '../dao';
+import { logServico } from '../servico';
 import { sucesso, erro, naoEncontrado } from '../util/respostas';
 import { TipoUsuario, UsuarioPublico } from '../modelo';
 
@@ -104,6 +105,17 @@ export class UsuarioController {
       }
 
       await usuarioDAO.remover(id);
+
+      try {
+        await logServico.registrarExclusao(
+          String(usuarioLogado?.id ?? '0'),
+          'usuario',
+          String(id),
+          `Usuário ${usuario.nome} removido`
+        );
+      } catch (logError) {
+        console.error('Erro ao registrar log de remoção de usuário:', logError);
+      }
 
       sucesso(res, null, 'Usuário removido com sucesso');
     } catch (error) {
