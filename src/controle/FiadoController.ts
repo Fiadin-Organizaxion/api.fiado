@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import { fiadoServico } from '../Servico'
+import { fiadoServico } from '../servico'
 import { sucesso, erro, naoEncontrado, naoAutorizado } from '../util/respostas'
 import { StatusFiado } from '../modelo/Fiado'
 import { CriarFiadoDTO, AtualizarFiadoDTO, FiltroFiadoDTO } from '../dto'

@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import { clienteServico } from '../Servico'
+import { clienteServico } from '../servico'
 import { sucesso, erro, naoEncontrado, naoAutorizado } from '../util/respostas'
 import { CriarClienteDTO, AtualizarClienteDTO } from '../dto'
 

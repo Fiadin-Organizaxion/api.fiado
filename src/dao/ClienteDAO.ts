@@ -6,10 +6,9 @@
 import { query } from '../util/database'
 import { Cliente } from '../modelo/Cliente'
 import { ClienteComFiadosDTO } from '../dto/ClienteDto'
-import { ResultSetHeader, RowDataPacket } from 'mysql2'
 
 // Interface para resultados do banco
-interface ClienteRow extends RowDataPacket {
+interface ClienteRow {
   id: string
   nome: string
   telefone: string | null
@@ -18,7 +17,7 @@ interface ClienteRow extends RowDataPacket {
   data_criacao: Date
 }
 
-interface ClienteComFiadosRow extends RowDataPacket {
+interface ClienteComFiadosRow {
   id: string
   nome: string
   telefone: string | null
@@ -28,14 +27,14 @@ interface ClienteComFiadosRow extends RowDataPacket {
 }
 
 export class ClienteDAO {
-  
+
   // Converte row do banco para entidade Cliente
   private toEntity(row: ClienteRow): Cliente {
     return Cliente.construir(
       row.id,
       row.nome,
       row.criado_por,
-      row.data_criacao,
+      new Date(row.data_criacao),
       row.telefone || undefined,
       row.endereco || undefined
     )
@@ -43,11 +42,18 @@ export class ClienteDAO {
 
   async criar(cliente: Cliente): Promise<void> {
     const sql = `
-      INSERT INTO clientes (id, nome, telefone, endereco, criado_por, data_criacao)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO clientes (
+        id,
+        nome,
+        telefone,
+        endereco,
+        criado_por,
+        data_criacao
+      )
+      VALUES ($1, $2, $3, $4, $5, $6)
     `
-    
-    await query<ResultSetHeader>(sql, [
+
+    await query(sql, [
       cliente.id,
       cliente.nome,
       cliente.telefone,
@@ -58,23 +64,39 @@ export class ClienteDAO {
   }
 
   async buscarPorId(id: string): Promise<Cliente | null> {
-    const sql = 'SELECT * FROM clientes WHERE id = ?'
+    const sql = `
+      SELECT *
+      FROM clientes
+      WHERE id = $1
+    `
+
     const rows = await query<ClienteRow[]>(sql, [id])
-    
+
     return rows.length > 0 ? this.toEntity(rows[0]!) : null
   }
 
   async listarTodos(): Promise<Cliente[]> {
-    const sql = 'SELECT * FROM clientes ORDER BY nome ASC'
+    const sql = `
+      SELECT *
+      FROM clientes
+      ORDER BY nome ASC
+    `
+
     const rows = await query<ClienteRow[]>(sql)
-    
+
     return rows.map(row => this.toEntity(row))
   }
 
   async buscarPorNome(nome: string): Promise<Cliente[]> {
-    const sql = 'SELECT * FROM clientes WHERE nome LIKE ? ORDER BY nome ASC'
+    const sql = `
+      SELECT *
+      FROM clientes
+      WHERE nome ILIKE $1
+      ORDER BY nome ASC
+    `
+
     const rows = await query<ClienteRow[]>(sql, [`%${nome}%`])
-    
+
     return rows.map(row => this.toEntity(row))
   }
 
@@ -86,14 +108,29 @@ export class ClienteDAO {
         c.telefone,
         c.endereco,
         COUNT(f.id) as total_fiados,
-        COALESCE(SUM(CASE WHEN f.status = 'ABERTO' THEN f.valor ELSE 0 END), 0) as valor_total_aberto
+        COALESCE(
+          SUM(
+            CASE 
+              WHEN f.status = 'ABERTO' 
+              THEN f.valor 
+              ELSE 0 
+            END
+          ),
+          0
+        ) as valor_total_aberto
       FROM clientes c
-      LEFT JOIN fiados f ON c.id = f.cliente_id
-      GROUP BY c.id, c.nome, c.telefone, c.endereco
+      LEFT JOIN fiados f 
+        ON c.id = f.cliente_id
+      GROUP BY 
+        c.id,
+        c.nome,
+        c.telefone,
+        c.endereco
       ORDER BY c.nome ASC
     `
+
     const rows = await query<ClienteComFiadosRow[]>(sql)
-    
+
     return rows.map(row => ({
       id: row.id,
       nome: row.nome,
@@ -106,12 +143,15 @@ export class ClienteDAO {
 
   async atualizar(cliente: Cliente): Promise<void> {
     const sql = `
-      UPDATE clientes 
-      SET nome = ?, telefone = ?, endereco = ?
-      WHERE id = ?
+      UPDATE clientes
+      SET
+        nome = $1,
+        telefone = $2,
+        endereco = $3
+      WHERE id = $4
     `
-    
-    await query<ResultSetHeader>(sql, [
+
+    await query(sql, [
       cliente.nome,
       cliente.telefone,
       cliente.endereco,
@@ -120,19 +160,27 @@ export class ClienteDAO {
   }
 
   async excluir(id: string): Promise<void> {
-    const sql = 'DELETE FROM clientes WHERE id = ?'
-    await query<ResultSetHeader>(sql, [id])
+    const sql = `
+      DELETE FROM clientes
+      WHERE id = $1
+    `
+
+    await query(sql, [id])
   }
 
   async temFiadosAbertos(clienteId: string): Promise<boolean> {
     const sql = `
-      SELECT COUNT(*) as total 
-      FROM fiados 
-      WHERE cliente_id = ? AND status = 'ABERTO'
+      SELECT COUNT(*) as total
+      FROM fiados
+      WHERE cliente_id = $1
+      AND status = 'ABERTO'
     `
-    const rows = await query<Array<{ total: number }>>(sql, [clienteId])
-    
-    return rows.length > 0 ? (rows[0]!).total > 0 : false
+
+    const rows = await query<Array<{ total: string }>>(sql, [clienteId])
+
+    return rows.length > 0
+      ? Number(rows[0]!.total) > 0
+      : false
   }
 }
 

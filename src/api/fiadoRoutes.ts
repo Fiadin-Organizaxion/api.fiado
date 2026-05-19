@@ -1,7 +1,7 @@
 import { Router } from 'express'
-import { fiadoController } from '../Controle'
-import { autenticar } from '../Controle/middleware/autenticacao'
-import { donoOuFuncionario } from '../Controle/middleware/autorizacao'
+import { fiadoController } from '../controle'
+import { autenticar } from '../controle/middleware/autenticacao'
+import { donoOuFuncionario } from '../controle/middleware/autorizacao'
 
 const router = Router()
 
