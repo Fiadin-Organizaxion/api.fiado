@@ -5,11 +5,14 @@
 
 import { query } from '../util/database'
 import { Fiado, StatusFiado } from '../modelo/Fiado'
-import { FiltroFiadoDTO, FiadoComClienteDTO, ResumoFinanceiroDTO } from '../dto/FiadoDto'
-import { ResultSetHeader, RowDataPacket } from 'mysql2'
+import {
+  FiltroFiadoDTO,
+  FiadoComClienteDTO,
+  ResumoFinanceiroDTO
+} from '../dto/FiadoDto'
 
 // Interface para resultados do banco
-interface FiadoRow extends RowDataPacket {
+interface FiadoRow {
   id: string
   cliente_id: string
   descricao: string
@@ -20,7 +23,7 @@ interface FiadoRow extends RowDataPacket {
   data_quitacao: Date | null
 }
 
-interface FiadoComClienteRow extends RowDataPacket {
+interface FiadoComClienteRow {
   id: string
   descricao: string
   valor: number
@@ -31,7 +34,7 @@ interface FiadoComClienteRow extends RowDataPacket {
   cliente_nome: string
 }
 
-interface ResumoRow extends RowDataPacket {
+interface ResumoRow {
   total_aberto: number
   total_quitado: number
   quantidade_abertos: number
@@ -39,7 +42,7 @@ interface ResumoRow extends RowDataPacket {
 }
 
 export class FiadoDAO {
-  
+
   // Converte row do banco para entidade Fiado
   private toEntity(row: FiadoRow): Fiado {
     return Fiado.construir(
@@ -49,18 +52,29 @@ export class FiadoDAO {
       Number(row.valor),
       row.status,
       row.registrado_por,
-      row.data_criacao,
+      new Date(row.data_criacao),
       row.data_quitacao
+        ? new Date(row.data_quitacao)
+        : null
     )
   }
 
   async criar(fiado: Fiado): Promise<void> {
     const sql = `
-      INSERT INTO fiados (id, cliente_id, descricao, valor, status, registrado_por, data_criacao, data_quitacao)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO fiados (
+        id,
+        cliente_id,
+        descricao,
+        valor,
+        status,
+        registrado_por,
+        data_criacao,
+        data_quitacao
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
     `
-    
-    await query<ResultSetHeader>(sql, [
+
+    await query(sql, [
       fiado.id,
       fiado.clienteId,
       fiado.descricao,
@@ -73,66 +87,96 @@ export class FiadoDAO {
   }
 
   async buscarPorId(id: string): Promise<Fiado | null> {
-    const sql = 'SELECT * FROM fiados WHERE id = ?'
+    const sql = `
+      SELECT *
+      FROM fiados
+      WHERE id = $1
+    `
+
     const rows = await query<FiadoRow[]>(sql, [id])
-    
-    return rows.length > 0 ? this.toEntity(rows[0]!) : null
+
+    return rows.length > 0
+      ? this.toEntity(rows[0]!)
+      : null
   }
 
   async listarTodos(): Promise<Fiado[]> {
-    const sql = 'SELECT * FROM fiados ORDER BY data_criacao DESC'
+    const sql = `
+      SELECT *
+      FROM fiados
+      ORDER BY data_criacao DESC
+    `
+
     const rows = await query<FiadoRow[]>(sql)
-    
+
     return rows.map(row => this.toEntity(row))
   }
 
   async listarPorCliente(clienteId: string): Promise<Fiado[]> {
-    const sql = 'SELECT * FROM fiados WHERE cliente_id = ? ORDER BY data_criacao DESC'
+    const sql = `
+      SELECT *
+      FROM fiados
+      WHERE cliente_id = $1
+      ORDER BY data_criacao DESC
+    `
+
     const rows = await query<FiadoRow[]>(sql, [clienteId])
-    
+
     return rows.map(row => this.toEntity(row))
   }
 
   async listarPorStatus(status: StatusFiado): Promise<Fiado[]> {
-    const sql = 'SELECT * FROM fiados WHERE status = ? ORDER BY data_criacao DESC'
+    const sql = `
+      SELECT *
+      FROM fiados
+      WHERE status = $1
+      ORDER BY data_criacao DESC
+    `
+
     const rows = await query<FiadoRow[]>(sql, [status])
-    
+
     return rows.map(row => this.toEntity(row))
   }
 
   async listarComFiltros(filtros: FiltroFiadoDTO): Promise<Fiado[]> {
-    let sql = 'SELECT * FROM fiados WHERE 1=1'
+    let sql = `
+      SELECT *
+      FROM fiados
+      WHERE 1=1
+    `
+
     const params: unknown[] = []
 
     if (filtros.clienteId) {
-      sql += ' AND cliente_id = ?'
       params.push(filtros.clienteId)
+      sql += ` AND cliente_id = $${params.length}`
     }
 
     if (filtros.status) {
-      sql += ' AND status = ?'
       params.push(filtros.status)
+      sql += ` AND status = $${params.length}`
     }
 
     if (filtros.dataInicio) {
-      sql += ' AND data_criacao >= ?'
       params.push(filtros.dataInicio)
+      sql += ` AND data_criacao >= $${params.length}`
     }
 
     if (filtros.dataFim) {
-      sql += ' AND data_criacao <= ?'
       params.push(filtros.dataFim)
+      sql += ` AND data_criacao <= $${params.length}`
     }
 
-    sql += ' ORDER BY data_criacao DESC'
+    sql += ` ORDER BY data_criacao DESC`
 
     const rows = await query<FiadoRow[]>(sql, params)
+
     return rows.map(row => this.toEntity(row))
   }
 
   async listarComDadosCliente(): Promise<FiadoComClienteDTO[]> {
     const sql = `
-      SELECT 
+      SELECT
         f.id,
         f.descricao,
         f.valor,
@@ -142,18 +186,22 @@ export class FiadoDAO {
         c.id as cliente_id,
         c.nome as cliente_nome
       FROM fiados f
-      INNER JOIN clientes c ON f.cliente_id = c.id
+      INNER JOIN clientes c
+        ON f.cliente_id = c.id
       ORDER BY f.data_criacao DESC
     `
+
     const rows = await query<FiadoComClienteRow[]>(sql)
-    
+
     return rows.map(row => ({
       id: row.id,
       descricao: row.descricao,
       valor: Number(row.valor),
       status: row.status,
-      dataCriacao: row.data_criacao,
-      dataQuitacao: row.data_quitacao,
+      dataCriacao: new Date(row.data_criacao),
+      dataQuitacao: row.data_quitacao
+        ? new Date(row.data_quitacao)
+        : null,
       cliente: {
         id: row.cliente_id,
         nome: row.cliente_nome
@@ -163,12 +211,16 @@ export class FiadoDAO {
 
   async atualizar(fiado: Fiado): Promise<void> {
     const sql = `
-      UPDATE fiados 
-      SET descricao = ?, valor = ?, status = ?, data_quitacao = ?
-      WHERE id = ?
+      UPDATE fiados
+      SET
+        descricao = $1,
+        valor = $2,
+        status = $3,
+        data_quitacao = $4
+      WHERE id = $5
     `
-    
-    await query<ResultSetHeader>(sql, [
+
+    await query(sql, [
       fiado.descricao,
       fiado.valor,
       fiado.status,
@@ -178,21 +230,58 @@ export class FiadoDAO {
   }
 
   async excluir(id: string): Promise<void> {
-    const sql = 'DELETE FROM fiados WHERE id = ?'
-    await query<ResultSetHeader>(sql, [id])
+    const sql = `
+      DELETE FROM fiados
+      WHERE id = $1
+    `
+
+    await query(sql, [id])
   }
 
   async obterResumoFinanceiro(): Promise<ResumoFinanceiroDTO> {
     const sql = `
-      SELECT 
-        COALESCE(SUM(CASE WHEN status = 'ABERTO' THEN valor ELSE 0 END), 0) as total_aberto,
-        COALESCE(SUM(CASE WHEN status = 'QUITADO' THEN valor ELSE 0 END), 0) as total_quitado,
-        COUNT(CASE WHEN status = 'ABERTO' THEN 1 END) as quantidade_abertos,
-        COUNT(CASE WHEN status = 'QUITADO' THEN 1 END) as quantidade_quitados
+      SELECT
+        COALESCE(
+          SUM(
+            CASE
+              WHEN status = 'ABERTO'
+              THEN valor
+              ELSE 0
+            END
+          ),
+          0
+        ) as total_aberto,
+
+        COALESCE(
+          SUM(
+            CASE
+              WHEN status = 'QUITADO'
+              THEN valor
+              ELSE 0
+            END
+          ),
+          0
+        ) as total_quitado,
+
+        COUNT(
+          CASE
+            WHEN status = 'ABERTO'
+            THEN 1
+          END
+        ) as quantidade_abertos,
+
+        COUNT(
+          CASE
+            WHEN status = 'QUITADO'
+            THEN 1
+          END
+        ) as quantidade_quitados
+
       FROM fiados
     `
+
     const rows = await query<ResumoRow[]>(sql)
-    
+
     return {
       totalAberto: Number(rows[0]?.total_aberto || 0),
       totalQuitado: Number(rows[0]?.total_quitado || 0),
