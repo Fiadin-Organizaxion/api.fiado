@@ -23,10 +23,7 @@ export class LogServico {
       throw new Error('usuarioId inválido')
     }
 
-    const entidadeId = dto.entidadeId !== undefined ? Number(dto.entidadeId) : undefined
-    if (dto.entidadeId !== undefined && Number.isNaN(entidadeId!)) {
-      throw new Error('entidadeId inválido')
-    }
+    const entidadeId = dto.entidadeId !== undefined ? dto.entidadeId : undefined
 
     // Criar entidade Log
     const log = Log.build(

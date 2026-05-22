@@ -16,7 +16,7 @@ export type LogProps = {
   acao: TipoAcao
   descricao: string
   entidade: string | null
-  entidadeId: number | null
+  entidadeId: string | null
   dataCriacao: Date
 }
 
@@ -25,7 +25,7 @@ export type LogCriacao = {
   acao: TipoAcao
   descricao: string
   entidade: string | null
-  entidade_id: number | null
+  entidade_id: string | null
 }
 
 export class Log {
@@ -36,7 +36,7 @@ export class Log {
     acao: TipoAcao,
     descricao: string,
     entidade?: string,
-    entidadeId?: number
+    entidadeId?: string | number
   ) {
     const props: LogProps = {
       id: randomUUID(),
@@ -44,7 +44,7 @@ export class Log {
       acao,
       descricao,
       entidade: entidade || null,
-      entidadeId: entidadeId || null,
+      entidadeId: entidadeId !== undefined ? String(entidadeId) : null,
       dataCriacao: new Date()
     }
     return new Log(props)
@@ -59,17 +59,10 @@ export class Log {
     entidade?: string,
     entidadeId?: string
   ) {
-    // 🔒 Conversões seguras
     const usuarioIdNum = Number(usuarioId)
-    const entidadeIdNum = entidadeId ? Number(entidadeId) : null
 
-    // 🔒 Validações
     if (isNaN(usuarioIdNum)) {
       throw new Error("usuarioId inválido")
-    }
-
-    if (entidadeId && isNaN(entidadeIdNum!)) {
-      throw new Error("entidadeId inválido")
     }
 
     const props: LogProps = {
@@ -78,7 +71,7 @@ export class Log {
       acao,
       descricao,
       entidade: entidade || null,
-      entidadeId: entidadeIdNum,
+      entidadeId: entidadeId || null,
       dataCriacao
     }
 
